@@ -2,7 +2,7 @@
 import ssl
 from selenium import webdriver
 from bs4 import BeautifulSoup
-from config import tjurl,password,apikey,pre
+from config import tjurl,password,apikey,pre,dbname,dbpasswd,dbuser,cat
 import requests
 
 # c = cookielib.LWPCookieJar()
@@ -15,10 +15,6 @@ import requests
 # headers = {
 #     "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36"
 # }
-ssl._create_default_https_context = ssl._create_unverified_context
-print "正在绑定浏览器"
-browser = webdriver.PhantomJS('d:/phantomjs-2.1.1-windows/bin/phantomjs.exe')
-print "绑定完毕，开始执行任务"
 
 def login():
     print "正在尝试登陆:"+tjurl
@@ -37,7 +33,13 @@ def login():
     except:
         print "登陆失败，请检查用户名密码"
     return
-
+def readFile():
+    f = open("list.txt")  # 返回一个文件对象
+    line = f.readline()  # 调用文件的 readline()方法
+    while line:
+        catchData(line.strip())  # 后面跟 ',' 将忽略换行符
+        line = f.readline()
+    f.close()
 def downImg(soup):
     print "开始下载商品图片..."
     m = 0
@@ -54,7 +56,26 @@ def downImg(soup):
     print ("图片下载完毕,一共下载了%s张图片"%(m))
     return m
 
-def catchData():
+def getDetile(soup):
+    print "变更商品详情中..."
+    str = ""
+    m = 0
+    for i in soup.find("div", id="J-detail-content").find_all("p"):
+        for res in i.find_all("img"):
+            res = res.get("data-lazyload").strip()
+            if res[0:4] == "http":
+                str = str + '<img src = '+res+' " alt="JDSPY" /><br/>'
+            else:
+                str = str + '<img src = "http:' + res + ' " alt="JDSPY" /><br/>'
+            m = m+1
+            print "正在爬取第%s张详情图片"%m
+    return str
+
+def catchData(goodsId):
+    if goodsId[0:4]!="http":
+        url = "https://item.jd.com/%s.html"%goodsId
+    else:
+        url = goodsId
     # req = urllib2.Request("https://item.jd.com/8762779.html")
     # req = urllib2.urlopen(req)
     # req.headers = headers
@@ -64,12 +85,10 @@ def catchData():
     #  = BeautifulSoup(HtmlPage)
     # content = soup.find("div",id = "J-detail-content").contents
     # return content
-    print "请设置商品ID,例:8762779"  #  https://item.jd.com/8762779.html
-    goodsId = raw_input()
-    print "请设置分类ID,例:858 ，\n分类ID获取方式：后台将鼠标放到分类名上可以在左下角看到cat_id=858 后面的数字就是id号"
-    catId = raw_input()
-    url = "https://item.jd.com/"+goodsId+".html"
-    print "商品地址设置成功，3秒后开始抓取页面"
+    # print "请设置分类ID,例:858 ，\n分类ID获取方式：后台将鼠标放到分类名上可以在左下角看到cat_id=858 后面的数字就是id号"
+    # catId = raw_input()
+    catId = cat
+    print "商品地址设置成功，%s,3秒后开始抓取页面"%url
     browser.implicitly_wait(300)
     print "开始抓取页面"
     browser.get(url)
@@ -84,25 +103,51 @@ def catchData():
     soup = BeautifulSoup(data,'html.parser')
     downImg(soup)
     content = {
-        'detile':soup.find("div", id="J-detail-content").contents,
+        'detile':getDetile(soup),
         'title' :soup.find('img', id = "spec-img").get('alt'),
         'price':soup.find('span',{'class': priceid}).contents[0],
         'hoverimg':"http://"+soup.find('img',id = "spec-img").get('src'),
         'cat':catId,
         'key': apikey,
         'tjurl':tjurl,
-        'pre' : pre
-
-
+        'pre' : pre,
+        'dbname':dbname,
+        'dbuser':dbuser,
+        'dbpasswd':dbpasswd,
         # 'imglist':soup.find('ul',{"class":"lh"}).find('li').find('img')['data-url']
     }
-    print "元素获取完毕，详细数据如下：\n  "
-    for key, value in content.items():
-        print "%s : %s"%(key,value)
+    # print "元素获取完毕，详细数据如下：\n  "
+    # for key, value in content.items():
+    #     print "%s : %s"%(key,value)
     # print tags
     # print content
-    return content
+    doPost(content)
+
+def doPost(dd,fa=[0],tr=[0]):
+    t = tr[0]+1
+    f = fa[0]+1
+    url = tjurl + "/post.php"
+    response = requests.post(url, dd)
+    # print response.text
+    if response.status_code == 200 and response.text == "success":
+        tr[0] = t
+        print "成功上传%s个商品！"%t
+    else:
+        fa[0] = f
+        print "失败%s个商品！"%f
 
 if __name__ == "__main__":
-    catchData()
+    ssl._create_default_https_context = ssl._create_unverified_context
+    print "正在绑定浏览器"
+    browser = webdriver.PhantomJS('d:/phantomjs-2.1.1-windows/bin/phantomjs.exe')
+    print "绑定完毕，开始执行任务"
+    print "请输入爬虫方式 1.从list.txt文件读取 2.手动输入ID"
+    method = raw_input()
+    if method == 2:
+        print "请设置商品ID,例:8762779"  # https://item.jd.com/8762779.html
+        goodsId = raw_input()
+        catchData(goodsId)
+    else:
+        print "从文件中读取..."
+        readFile()
     # login()
