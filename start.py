@@ -69,6 +69,15 @@ def getDetile(soup):
                 str = str + '<img src = "http:' + res + ' " alt="JDSPY" /><br/>'
             m = m+1
             print "正在爬取第%s张详情图片"%m
+    if m == 0:
+        print "正在解析CSS样式"
+        style = soup.find("div",id = "J-detail-content").find("style").contents
+        content = soup.find("div",{"class":"ssd-module-wrap"})
+        style = style[0].strip()
+        str = "<style>%s</style><div class=\"ssd-module-wrap\">%s</div>"%(style,content)
+        # str = "<style>"+style+"</style>"+"<div class=\"ssd-module-wrap\">"+content+"</div>"
+        str = str.encode("utf-8")
+        # str = str.replace("u\'","").replace("\\n\'","").replace("[","")
     return str
 
 def catchData(goodsId):
@@ -76,6 +85,7 @@ def catchData(goodsId):
         url = "https://item.jd.com/%s.html"%goodsId
     else:
         url = goodsId
+        goodsId = goodsId.replace("https://item.jd.com/","").replace(".html","")
     # req = urllib2.Request("https://item.jd.com/8762779.html")
     # req = urllib2.urlopen(req)
     # req.headers = headers
@@ -88,7 +98,7 @@ def catchData(goodsId):
     # print "请设置分类ID,例:858 ，\n分类ID获取方式：后台将鼠标放到分类名上可以在左下角看到cat_id=858 后面的数字就是id号"
     # catId = raw_input()
     catId = cat
-    print "商品地址设置成功，%s,3秒后开始抓取页面"%url
+    print "商品地址设置成功，%s，3秒后开始抓取页面"%url
     browser.implicitly_wait(300)
     print "开始抓取页面"
     browser.get(url)
@@ -124,15 +134,15 @@ def catchData(goodsId):
     doPost(content)
 
 def doPost(dd,fa=[0],tr=[0]):
-    t = tr[0]+1
-    f = fa[0]+1
     url = tjurl + "/post.php"
     response = requests.post(url, dd)
-    # print response.text
+    print response.text
     if response.status_code == 200 and response.text == "success":
+        t = tr[0] + 1
         tr[0] = t
         print "成功上传%s个商品！"%t
     else:
+        f = fa[0] + 1
         fa[0] = f
         print "失败%s个商品！"%f
 
@@ -143,7 +153,7 @@ if __name__ == "__main__":
     print "绑定完毕，开始执行任务"
     print "请输入爬虫方式 1.从list.txt文件读取 2.手动输入ID"
     method = raw_input()
-    if method == 2:
+    if method == "2":
         print "请设置商品ID,例:8762779"  # https://item.jd.com/8762779.html
         goodsId = raw_input()
         catchData(goodsId)
