@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import ssl
+import urllib,urllib2
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from config import tjurl,password,apikey,pre,dbname,dbpasswd,dbuser,cat
@@ -146,11 +147,7 @@ def doPost(dd,fa=[0],tr=[0]):
         fa[0] = f
         print "失败%s个商品！"%f
 
-if __name__ == "__main__":
-    ssl._create_default_https_context = ssl._create_unverified_context
-    print "正在绑定浏览器"
-    browser = webdriver.PhantomJS('d:/phantomjs-2.1.1-windows/bin/phantomjs.exe')
-    print "绑定完毕，开始执行任务"
+def storage():
     print "请输入爬虫方式 1.从list.txt文件读取 2.手动输入ID"
     method = raw_input()
     if method == "2":
@@ -160,4 +157,55 @@ if __name__ == "__main__":
     else:
         print "从文件中读取..."
         readFile()
+
+def spy():
+    print "请输入需要采集的关键词"
+    keywords = raw_input()
+    print "当前采集关键词：%s  开始采集"%keywords
+    print "请输入需要采集的页数，每页56个商品"
+    page = raw_input()
+    page = int(page)*2
+    f = open("list.txt","w")  # 返回一个文件对象
+    for i in range(1,page,2):
+        pages = int((i+1)/2)
+        print "正在采集第%s页商品信息"%pages
+        keyword = urllib.quote(keywords)
+        url = "https://search.jd.com/Search?keyword=%s&enc=utf-8&qrst=1&rt=1&stop=1&vt=2&stock=1&page=%s&s=56&click=0" % (
+        keyword, i)
+        print url
+        req = urllib2.Request(url)
+        req = urllib2.urlopen(req)
+        HtmlPage = req.read()
+        soup = BeautifulSoup(HtmlPage, 'html.parser')
+        item = soup.find("div",id = "J_goodsList").find_all("li",{"class":"gl-item"})
+        for i in item:
+            items = i.find_all("a")
+            reurl = ""
+            for j in items:
+                goodsUrl = j.get("href")
+                if goodsUrl[0:6] != "//item":
+                    continue
+                if goodsUrl[-4:-1]!="html":
+                    goodsUrl = "https:"+goodsUrl.replace("#comment","")
+                    if goodsUrl == reurl:
+                        continue
+                f.writelines(goodsUrl+"\n")
+                reurl = goodsUrl
+    f.close()
+
+if __name__ == "__main__":
+    ssl._create_default_https_context = ssl._create_unverified_context
+    print "正在绑定浏览器"
+    browser = webdriver.PhantomJS('d:/phantomjs-2.1.1-windows/bin/phantomjs.exe')
+    print "绑定完毕，开始执行任务"
+    print "1.采集 2.入库 3.采集+入库  默认3"
+    print "Tips:当有采集任务时，会覆盖当前 list.txt 的内容"
+    do = raw_input()
+    if do == "2":
+        storage()
+    elif do == "1":
+        spy()
+    else:
+        spy()
+        storage()
     # login()
