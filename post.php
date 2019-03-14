@@ -1,14 +1,15 @@
 <?php
 $data = $_POST;
 
-$DBIP     = "localhost";          // 此处填写数据库ip地址
-$DBNAME   = $data['dbname'];              // 此处填写数据库名
-$DBUSER   = $data['dbuser'];              // 此处填写数据库用户，可以填写root用户
-$DBPASSWD = $data['dbpasswd'];             // 此处填写数据库密码
+$DBIP     = "localhost";
+$DBNAME   = $data['dbname'];
+$DBUSER   = $data['dbuser'];
+$DBPASSWD = $data['dbpasswd'];
 $searchLink = mysqli_connect($DBIP,$DBUSER,$DBPASSWD,$DBNAME) or die("数据库链接失败");
 mysqli_set_charset($searchLink,"utf8");
 
-$url=$data['tjurl']."/api.php?app_key=".$data['key']."&method=dsc.goods.insert.post&format=json";
+$insertUrl=$data['tjurl']."/api.php?app_key=".$data['key']."&method=dsc.goods.insert.post&format=json";
+$updateGrallyUrl = $data['tjurl']."/api.php?app_key=".$data['key']."&method=dsc.goods.gallery.insert.post&format=json";
 $postData=array(
 'cat_id' => $data['cat'],  // 分类ID
 'user_id' => '0',   // 用户ID
@@ -27,39 +28,60 @@ $postData=array(
 'goods_weight'=>'111'   // 商品重量 克
 );
 
+$imglist = $data['imglist'];
+$imglist = explode(",", $imglist);
+
 $goods_sn = $postData['goods_sn'];//  货号，根据货号修改相关商品数据
 $postData = json_encode($postData); // 对变量进行 JSON 编码
 $argument=array(
 'data' => $postData,
 );
-$res = curlPost($url,$argument);
-// var_dump($res);
+$res = curlPost($insertUrl,$argument);
 $res = (array)json_decode($res,true);
-// var_dump($res);
 $updateDetileSql = 'update dsc_goods set goods_desc=\''.$data['detile'].'\' where goods_sn="'.$goods_sn.'";';
-// echo $updateDetileSql."<br />";
 $updateDetileResult = mysqli_query($searchLink,$updateDetileSql);
-// var_dump($updateDetileResult);
+$searchGoodsSql = 'select * from dsc_goods where goods_sn="'.$goods_sn.'";';
+$searchGoodsResult = mysqli_query($searchLink,$searchGoodsSql);
+$goods_id = mysqli_fetch_array($searchGoodsResult);
+$goods_id = $goods_id['goods_id'];
+
+for ($i=0; $i < count($imglist)-1; $i++) {
+	$grallyData=array(
+	'goods_id' => (int)$goods_id,
+	'img_url' => $imglist[$i],
+	'img_desc' => $i,
+	'thumb_url' => str_replace("800x800","400x400",$imglist[$i]),
+	'img_original' => $imglist[$i],
+	);
+	$grallyData = json_encode($grallyData);
+	$grallyData=array(
+	'data' => $grallyData
+	);
+	$grallyRes = curlPost($updateGrallyUrl,$grallyData);
+	// $grallyRes = (array)json_decode($res,true);
+}
+
 if ($res['error']==0 && $updateDetileResult) {
 	echo "success";
 }
 else{
 	echo "error";
 }
-function curlPost($url,$res){
-	$curl = curl_init(); // 启动一个CURL会话
-	curl_setopt($curl, CURLOPT_URL, $url); // 要访问的地址
-	curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0); // 对认证证书来源的检查
-	curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1); // 使用自动跳转
-	curl_setopt($curl, CURLOPT_AUTOREFERER, 1); // 自动设置Referer
-	curl_setopt($curl, CURLOPT_POST, 1); // 发送一个常规的Post请求
-	curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($res));
-	curl_setopt($curl, CURLOPT_TIMEOUT, 30); // 设置超时限制防止死循环
-	curl_setopt($curl, CURLOPT_HEADER, 0); // 显示返回的Header区域内容
-	curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1); // 获取的信息以文件流的形式返回
 
-	$result = curl_exec($curl); // 执行赋值操作
-	curl_close($curl); // 关闭CURL会话
-    //这里解析
+
+function curlPost($url,$res){
+	$curl = curl_init();
+	curl_setopt($curl, CURLOPT_URL, $url);
+	curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+	curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+	curl_setopt($curl, CURLOPT_AUTOREFERER, 1);
+	curl_setopt($curl, CURLOPT_POST, 1);
+	curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($res));
+	curl_setopt($curl, CURLOPT_TIMEOUT, 30);
+	curl_setopt($curl, CURLOPT_HEADER, 0);
+	curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+
+	$result = curl_exec($curl);
+	curl_close($curl);
     return $result;
 }

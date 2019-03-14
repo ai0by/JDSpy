@@ -52,12 +52,15 @@ def readFile():
 # 图片下载
 def downImg(soup):
     print "开始下载商品图片..."
+    str = ""
     m = 0
     try:
         for i in soup.find_all('ul',{"class":"lh"}):
             for j in i.find_all('li'):
                 # print "http://img14.360buyimg.com/n1/"+i.find('img').get('data-url').strip()
                 imgUrl = "http://img14.360buyimg.com/n1/"+j.find('img').get('data-url').strip()
+                imgUrl = imgUrl.replace("/jfs/","/s800x800_jfs/")
+                str = str + imgUrl + ","
                 print ("正在下载第%s张图片"%(m+1))
                 # browser.get(imgUrl)
                 # browser.save_screenshot('./imgDL/good%s.jpg'%(m+1))
@@ -67,9 +70,9 @@ def downImg(soup):
                 m = m + 1
     except Exception,e:
         # print "错误:"+e.message
-        print "图片下载完毕"
-    print ("一共下载了%s张图片"%(m))
-    return m
+        return str
+    print ("图片下载完毕,一共下载了%s张图片"%(m))
+    return str
 
 # 获取京东商品详情
 def getDetile(soup):
@@ -80,14 +83,14 @@ def getDetile(soup):
         for res in i.find_all("img"):
             res = res.get("data-lazyload").strip()
             if res[0:4] == "http":
-                str = str + '<img src = '+res+' " alt="JDSPY" /><br/>'
+                str = str + '<img src = '+res+' " alt="JDSPY" align=\"absmiddle\" /><br/>'
             else:
-                str = str + '<img src = "http:' + res + ' " alt="JDSPY" /><br/>'
+                str = str + '<img src = "http:' + res + ' " alt="JDSPY" align=\"absmiddle\" /><br/>'
             m = m+1
             print "正在爬取第%s张详情图片"%m
     if m == 0:
         for i in soup.find("div", id="J-detail-content").find_all("img"):
-            str = str + "<img src=\"" + i.get("data-lazyload") + "\" alt = \"JDSPY\" /><br />"
+            str = str + "<img src=\"" + i.get("data-lazyload") + "\" alt = \"JDSPY\" align=\"absmiddle\" /><br />"
             m = m + 1
             print "正在爬取第%s张详情图片" % m
     if m == 0:
@@ -140,12 +143,12 @@ def catchData(goodsId):
         price = soup.find('span', {'class': priceid}).contents[0]
     except Exception,e:
         price = soup.find('span', {'class': "price J-presale-price"}).contents[0]
-    downImg(soup)
+    hoverimg = "http://"+soup.find('img',id = "spec-img").get('src').replace("450x450","800x800")
     content = {
         'detile':getDetile(soup),
         'title' :soup.find('img', id = "spec-img").get('alt'),
         'price': price,
-        'hoverimg':"http://"+soup.find('img',id = "spec-img").get('src'),
+        'hoverimg':hoverimg,
         'cat':catId,
         'key': apikey,
         'tjurl':tjurl,
@@ -153,6 +156,7 @@ def catchData(goodsId):
         'dbname':dbname,
         'dbuser':dbuser,
         'dbpasswd':dbpasswd,
+        'imglist':downImg(soup)
         # 'imglist':soup.find('ul',{"class":"lh"}).find('li').find('img')['data-url']
     }
     # print "元素获取完毕，详细数据如下：\n  "
