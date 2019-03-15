@@ -156,7 +156,8 @@ def catchData(goodsId):
         'dbname':dbname,
         'dbuser':dbuser,
         'dbpasswd':dbpasswd,
-        'imglist':downImg(soup)
+        'imglist':downImg(soup),
+        'weight':soup.find('div',id = "summary-weight").find('div',{'class':'dd'})
         # 'imglist':soup.find('ul',{"class":"lh"}).find('li').find('img')['data-url']
     }
     # print "元素获取完毕，详细数据如下：\n  "
@@ -230,9 +231,8 @@ def spy():
 
 if __name__ == "__main__":
     ssl._create_default_https_context = ssl._create_unverified_context
-    print "正在绑定浏览器"
+    print "JDSPY开始执行任务,正在绑定浏览器"
     browser = webdriver.PhantomJS('d:/phantomjs-2.1.1-windows/bin/phantomjs.exe')
-    print "绑定完毕，开始执行任务"
     print "1.采集 2.入库 3.采集+入库  默认3"
     print "Tips:当有采集任务时，会覆盖当前 list.txt 的内容"
     do = raw_input()

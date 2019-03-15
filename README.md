@@ -2,7 +2,7 @@
 
 - 京东商品信息采集
 - 商品图片下载
-- 一键入库（目前支持大商创）
+- 一键入库（目前支持大商创,ECShop）
 - 一键采集入库
 ![JDSPY](http://fulicos.sbcoder.cn/2019/03/14/5c89ad40669bf.png)
 ![JDSPY](http://fulicos.sbcoder.cn/2019/03/14/5c89ad3c800de.png)
