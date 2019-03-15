@@ -157,7 +157,7 @@ def catchData(goodsId):
         'dbuser':dbuser,
         'dbpasswd':dbpasswd,
         'imglist':downImg(soup),
-        'weight':soup.find('div',id = "summary-weight").find('div',{'class':'dd'})
+        # 'weight':soup.find('div',id = "summary-weight").find('div',{'class':'dd'})
         # 'imglist':soup.find('ul',{"class":"lh"}).find('li').find('img')['data-url']
     }
     # print "元素获取完毕，详细数据如下：\n  "
