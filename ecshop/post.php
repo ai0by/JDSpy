@@ -1,5 +1,5 @@
 <?php
-
+// 将本文件放置在ECShop根目录下
 $data = $_POST;
 
 $DBIP     = "localhost";         

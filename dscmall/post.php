@@ -1,4 +1,5 @@
 <?php
+// 将本文件放置在大商创根目录下
 $data = $_POST;
 
 $DBIP     = "localhost";
